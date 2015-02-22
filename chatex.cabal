@@ -1,0 +1,43 @@
+name:                  chatex
+
+--                     +-+------- breaking API changes
+--                     | | +----- non-breaking API additions
+--                     | | | +--- code changes with no API change
+version:               0.1.0.0
+
+synopsis:              Web chat with LaTeX-style math typesetting.
+
+description:           Web chat with LaTeX-style math typesetting.
+
+license:               GPL-3
+
+license-file:          LICENSE
+
+author:                Sebastian Conybeare
+
+homepage:              https://github.com/sebmathguy/chatex
+
+maintainer:            sebmathguy@gmail.com
+
+category:              Web
+
+build-type:            Simple
+
+cabal-version:         >=1.10
+
+executable chatex
+  main-is:             Main.hs
+  default-extensions:  BangPatterns,
+                       OverloadedStrings,
+                       OverloadedLists,
+                       TupleSections
+  build-depends:       base >=4.6 && <4.9,
+                       text >=1.2 && <1.3,
+                       containers >=0.5 && <0.6
+  hs-source-dirs:      src
+  ghc-options:         -Wall
+  default-language:    Haskell2010
+  
+source-repository head
+  type:                git
+  location:            git://github.com/sebmathguy/chatex.git
