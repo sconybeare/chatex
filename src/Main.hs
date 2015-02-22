@@ -16,7 +16,7 @@
 
 module Main where
 
-import           Control.Concurrent.MVar
+import           Control.Concurrent.STM
 import           Control.Monad.IO.Class  (liftIO)
 import           Data.Monoid             (mconcat)
 import           Data.Text.Lazy
@@ -24,12 +24,12 @@ import           Web.Scotty
 
 main :: IO ()
 main = do
-  msg <- newMVar []
+  msg <- atomically $ newTVar ([] :: [Text])
   scotty 3000 $ do
     get "/submit/:added" $ do
       newMsg <- param "added"
-      liftIO $ modifyMVar_ msg (return . (newMsg :))
-      html newMsg
+      liftIO $ atomically $ modifyTVar' msg (newMsg:)
+      liftIO $ (atomically $ readTVar msg) >>= print
     get "/status" $ do
-      msgs <- liftIO $ readMVar msg
+      msgs <- liftIO $ atomically $ readTVar msg
       html $ mconcat ["<p>", pack $ show msgs, "</p>"]
