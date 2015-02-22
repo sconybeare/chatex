@@ -1,8 +1,6 @@
-HsCalculator
+ChaTeX
 ============
 
-This is a trivial calculator implemented in Haskell, for fun, to learn about programming language theory.
+Web chat with LaTeX-style math typesetting.
 
-by Remy Goldschmidt
-
-[![Build Status](https://travis-ci.org/taktoa/HsCalculator.svg?branch=master)](https://travis-ci.org/taktoa/HsCalculator)
+[![Build Status](https://travis-ci.org/sebmathguy/chatex.svg?branch=master)](https://travis-ci.org/sebmathguy/chatex)
