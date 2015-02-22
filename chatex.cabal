@@ -29,7 +29,6 @@ executable chatex
   main-is:             Main.hs
   default-extensions:  BangPatterns
                      , OverloadedStrings
-                     , OverloadedLists
                      , TupleSections
   build-depends:       base >=4.6 && <4.9
                      , text >=1.2 && <1.3
