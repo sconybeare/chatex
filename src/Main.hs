@@ -16,5 +16,20 @@
 
 module Main where
 
+import           Control.Concurrent.MVar
+import           Control.Monad.IO.Class  (liftIO)
+import           Data.Monoid             (mconcat)
+import           Data.Text.Lazy
+import           Web.Scotty
+
 main :: IO ()
-main = putStrLn "Hello, World!"
+main = do
+  msg <- newMVar []
+  scotty 3000 $ do
+    get "/submit/:added" $ do
+      newMsg <- param "added"
+      liftIO $ modifyMVar_ msg (return . (newMsg :))
+      html newMsg
+    get "/status" $ do
+      msgs <- liftIO $ readMVar msg
+      html $ mconcat ["<p>", pack $ show msgs, "</p>"]
