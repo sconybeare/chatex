@@ -23,16 +23,6 @@ import           Data.Text.Lazy          (pack, Text)
 import           Web.Scotty
 import           Data.Functor            ((<$>))
 
-staticUser :: TChan Text -> ScottyM ()
-staticUser msgBuffer = do
-  get "/submit/:added" $ do
-    newMsg <- param "added"
-    liftIO $ atomically $ writeTChan msgBuffer newMsg
-    liftIO $ print newMsg
-  get "/status" $ do
-    msg <- liftIO $ atomically $ readTChan msgBuffer
-    html $ mconcat ["<p>", pack $ show msg, "</p>"]
-
 multiUser :: TVar [TChan Text] -> ScottyM ()
 multiUser bufs = do
   get "/submit/:added" $ do
@@ -59,7 +49,6 @@ multiUser bufs = do
 
 main :: IO ()
 main = do
-  msgBuffer <- atomically $ (newTChan :: STM (TChan Text))
   userBuffers <- atomically $ (newTVar ([] :: [TChan Text]))
 --  scotty 3000 staticUser
   scotty 3000 $ multiUser userBuffers
