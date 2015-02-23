@@ -19,20 +19,47 @@ module Main where
 import           Control.Concurrent.STM
 import           Control.Monad.IO.Class  (liftIO)
 import           Data.Monoid             (mconcat)
-import           Data.Text.Lazy
+import           Data.Text.Lazy          (pack, Text)
 import           Web.Scotty
+import           Data.Functor            ((<$>))
 
-staticUser :: TChan Text -> [ScottyM ()]
-staticUser msgBuffer = [ get "/submit/:added" $ do
-                           newMsg <- param "added"
-                           liftIO $ atomically $ writeTChan msgBuffer newMsg
-                           liftIO $ print newMsg
-                       , get "/status" $ do
-                           msg <- liftIO $ atomically $ readTChan msgBuffer
-                           html $ mconcat ["<p>", pack $ show msg, "</p>"]
-                       ]
+staticUser :: TChan Text -> ScottyM ()
+staticUser msgBuffer = do
+  get "/submit/:added" $ do
+    newMsg <- param "added"
+    liftIO $ atomically $ writeTChan msgBuffer newMsg
+    liftIO $ print newMsg
+  get "/status" $ do
+    msg <- liftIO $ atomically $ readTChan msgBuffer
+    html $ mconcat ["<p>", pack $ show msg, "</p>"]
+
+multiUser :: TVar [TChan Text] -> ScottyM ()
+multiUser bufs = do
+  get "/submit/:added" $ do
+    newMsg <- param "added"
+    liftIO $ atomically $ do
+      chans <- readTVar bufs
+      sequence_ $ map (flip writeTChan newMsg) chans
+    html $ mconcat ["<p>", pack $ show newMsg, "</p>"]
+    liftIO $ print newMsg
+  
+  get "/status/:user" $ do
+    uName <- fromInteger . read <$> param "user"
+    msg <- liftIO $ atomically $ do
+      chans <- readTVar bufs
+      readTChan (chans !! uName)
+    html $ mconcat ["<p>", pack $ show msg, "</p>"]
+  
+  get "/add" $ do
+    liftIO $ atomically $ do
+      x <- newTChan :: STM (TChan Text)
+      modifyTVar' bufs (x:)
+    b <- liftIO $ atomically $ readTVar bufs
+    html $ mconcat ["<p>", pack $ show $ length b, "</p>"]
 
 main :: IO ()
 main = do
   msgBuffer <- atomically $ (newTChan :: STM (TChan Text))
-  scotty 3000 $ sequence_ $ staticUser msgBuffer
+  userBuffers <- atomically $ (newTVar ([] :: [TChan Text]))
+--  scotty 3000 staticUser
+  scotty 3000 $ multiUser userBuffers
