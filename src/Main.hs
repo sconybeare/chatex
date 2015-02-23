@@ -24,12 +24,12 @@ import           Web.Scotty
 
 main :: IO ()
 main = do
-  msg <- atomically $ newTVar ([] :: [Text])
+  msgBuffer <- atomically $ (newTChan :: STM (TChan Text))
   scotty 3000 $ do
     get "/submit/:added" $ do
       newMsg <- param "added"
-      liftIO $ atomically $ modifyTVar' msg (newMsg:)
-      liftIO $ (atomically $ readTVar msg) >>= print
+      liftIO $ atomically $ writeTChan msgBuffer newMsg
+      liftIO $ print newMsg
     get "/status" $ do
-      msgs <- liftIO $ atomically $ readTVar msg
-      html $ mconcat ["<p>", pack $ show msgs, "</p>"]
+      msg <- liftIO $ atomically $ readTChan msgBuffer
+      html $ mconcat ["<p>", pack $ show msg, "</p>"]
