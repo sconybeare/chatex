@@ -22,14 +22,17 @@ import           Data.Monoid             (mconcat)
 import           Data.Text.Lazy
 import           Web.Scotty
 
+staticUser :: TChan Text -> [ScottyM ()]
+staticUser msgBuffer = [ get "/submit/:added" $ do
+                           newMsg <- param "added"
+                           liftIO $ atomically $ writeTChan msgBuffer newMsg
+                           liftIO $ print newMsg
+                       , get "/status" $ do
+                           msg <- liftIO $ atomically $ readTChan msgBuffer
+                           html $ mconcat ["<p>", pack $ show msg, "</p>"]
+                       ]
+
 main :: IO ()
 main = do
   msgBuffer <- atomically $ (newTChan :: STM (TChan Text))
-  scotty 3000 $ do
-    get "/submit/:added" $ do
-      newMsg <- param "added"
-      liftIO $ atomically $ writeTChan msgBuffer newMsg
-      liftIO $ print newMsg
-    get "/status" $ do
-      msg <- liftIO $ atomically $ readTChan msgBuffer
-      html $ mconcat ["<p>", pack $ show msg, "</p>"]
+  scotty 3000 $ sequence_ $ staticUser msgBuffer
