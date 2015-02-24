@@ -18,20 +18,31 @@ module Main where
 
 import           Control.Concurrent.STM
 import           Control.Monad.IO.Class  (liftIO)
-import           Data.Monoid             (mconcat)
-import           Data.Text.Lazy          (pack, Text)
+import           Data.Text.Lazy          (Text)
 import           Web.Scotty
 import qualified Data.Map.Strict as M
 import           Data.Map.Strict         (empty, Map)
+import           Data.Aeson              (ToJSON, toJSON, (.=), object)
+import           Data.Functor            ((<$>))
 
-multiUser :: TVar (Map Text (TChan Text)) -> ScottyM ()
+newtype User = User Text deriving (Ord, Eq, Show)
+data Message = Error Text | Message Text
+
+instance ToJSON User where
+    toJSON (User name) = object ["User" .= name]
+
+instance ToJSON Message where
+    toJSON (Error e) = object ["error" .= e]
+    toJSON (Message m) = object ["message" .= m]
+
+multiUser :: TVar (Map User (TChan Text)) -> ScottyM ()
 multiUser bufs = do
   get "/submit/:added" $ do
     newMsg <- param "added"
     liftIO $ atomically $ do
       chans <- readTVar bufs
       sequence_ $ map (flip writeTChan newMsg . snd) (M.toList chans)
-    html $ mconcat ["<p>", pack $ show newMsg, "</p>"]
+    json $ Message newMsg
     liftIO $ print newMsg
   
 
@@ -39,29 +50,30 @@ multiUser bufs = do
     uName <- param "user"
     msg <- liftIO $ atomically $ do
       chans <- readTVar bufs
-      case M.lookup uName chans of
-        Just usrBuf -> peekTChan usrBuf
-        Nothing     -> return "No such user"
-    html $ mconcat ["<p>", msg, "</p>"]
+      case M.lookup (User uName) chans of
+        Just usrBuf -> fmap Message (peekTChan usrBuf)
+        Nothing     -> return $ Error "No such user."
+    json msg
+
 
   get "/next/:user" $ do
     uName <- param "user"
     msg <- liftIO $ atomically $ do
       chans <- readTVar bufs
-      case M.lookup uName chans of
-        Just usrBuf -> readTChan usrBuf
-        Nothing     -> return "No such user"
-    html $ mconcat ["<p>", "Queue advanced: ", msg, "</p>"]
+      case M.lookup (User uName) chans of
+        Just usrBuf -> Message <$> readTChan usrBuf
+        Nothing     -> return $ Error "No such user"
+    json msg
 
   
   get "/add/:user" $ do
-    uName <- param "user"
+    user <- param "user"
     liftIO $ atomically $ do
       x <- newTChan :: STM (TChan Text) --find better name
-      modifyTVar' bufs $ M.insert uName x
-    html $ mconcat ["<p>", uName, "</p>"]
+      modifyTVar' bufs $ M.insert (User user) x
+    json $ user
 
 main :: IO ()
 main = do
-  userBuffers <- atomically $ (newTVar (empty :: Map Text (TChan Text)))
+  userBuffers <- atomically $ (newTVar (empty :: Map User (TChan Text)))
   scotty 3000 $ multiUser userBuffers
