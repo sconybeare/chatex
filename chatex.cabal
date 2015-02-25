@@ -3,7 +3,7 @@ name:                  chatex
 --                     +-+------- breaking API changes
 --                     | | +----- non-breaking API additions
 --                     | | | +--- code changes with no API change
-version:               0.1.0.0
+version:               0.2.0.0
 
 synopsis:              Web chat with LaTeX-style math typesetting.
 
@@ -36,7 +36,7 @@ executable chatex
                      , stm >=2.4 && <2.5
                      , scotty >=0.9 && <0.10
                      , transformers >=0.2 && <0.5
-                     , aeson >= 0.7 && <0.8
+                     , aeson >=0.8 && <0.9
   hs-source-dirs:      src
   ghc-options:         -Wall
   default-language:    Haskell2010
