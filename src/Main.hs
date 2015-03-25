@@ -69,8 +69,8 @@ multiUser bufs = do
   get "/add/:user" $ do
     user <- param "user"
     liftIO $ atomically $ do
-      x <- newTChan :: STM (TChan Text) --find better name
-      modifyTVar' bufs $ M.insert (User user) x
+      newUserBuf <- newTChan :: STM (TChan Text)
+      modifyTVar' bufs $ M.insert (User user) newUserBuf
     json $ user
 
 main :: IO ()
