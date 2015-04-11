@@ -37,7 +37,7 @@ instance ToJSON Message where
 
 multiUser :: TVar (Map User (TChan Text)) -> ScottyM ()
 multiUser bufs = do
-  get "/submit/:added" $ do
+  post "/submit/:added" $ do
     newMsg <- param "added"
     liftIO $ atomically $ do
       chans <- readTVar bufs
@@ -66,12 +66,16 @@ multiUser bufs = do
     json msg
 
   
-  get "/add/:user" $ do
+  post "/add/:user" $ do
     user <- param "user"
     liftIO $ atomically $ do
       newUserBuf <- newTChan :: STM (TChan Text)
       modifyTVar' bufs $ M.insert (User user) newUserBuf
-    json $ user
+    json user
+
+  get "/static/:file" $ do
+    fname <- param "file"
+    file ("static/" ++ fname)
 
 main :: IO ()
 main = do
