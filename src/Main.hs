@@ -80,4 +80,4 @@ multiUser bufs = do
 main :: IO ()
 main = do
   userBuffers <- atomically $ (newTVar (empty :: Map User (TChan Text)))
-  scotty 3000 $ multiUser userBuffers
+  scotty 9987 $ multiUser userBuffers
